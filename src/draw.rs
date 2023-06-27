@@ -6,6 +6,7 @@
 use winit::window::Window;
 use std::{borrow::Cow, f32::consts::PI};
 use crate::matrix::{Mat4, Vec4};
+use wgpu::util::DeviceExt;
 
 // the cube to draw :)
 const CUBE_VERTICES: [f32; 144] = [
@@ -60,7 +61,9 @@ pub struct Draw {
   device: wgpu::Device,
   queue: wgpu::Queue,
   render_pipeline: wgpu::RenderPipeline,
-  config: wgpu::SurfaceConfiguration
+  config: wgpu::SurfaceConfiguration,
+  vertex_buffer: wgpu::Buffer,
+  // unifrom_buffer: wgpu::Buffer
 }
 
 impl Draw {
@@ -100,6 +103,11 @@ impl Draw {
     let model = Mat4::transformation(0., 0., 0., PI / 4., PI / 4., 0., 0.5, 0.5, 0.5);
 
     // create a vertex buffer and uniform buffer for the perspective and model
+    let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+      label: Some("Vertex Buffer"),
+      contents: bytemuck::cast_slice(&CUBE_VERTICES),
+      usage: wgpu::BufferUsages::VERTEX
+    });
   
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
       label: None,
@@ -116,7 +124,13 @@ impl Draw {
       vertex: wgpu::VertexState {
         module: &shader,
         entry_point: "vs_main",
-        buffers: &[]
+        buffers: &[
+          wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<[f32; 4]>() as wgpu::BufferAddress,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &wgpu::vertex_attr_array![ 0 => Float32x4 ]
+          }
+        ]
       },
       fragment: Some(wgpu::FragmentState {
         module: &shader,
@@ -141,7 +155,7 @@ impl Draw {
   
     surface.configure(&device, &config);
 
-    Draw { surface, device, queue, render_pipeline, config }
+    Draw { surface, device, queue, render_pipeline, config, vertex_buffer }
 
   }
 
@@ -169,7 +183,8 @@ impl Draw {
         depth_stencil_attachment: None
       });
       rp.set_pipeline(&self.render_pipeline);
-      rp.draw(0..3, 0..1);
+      rp.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+      rp.draw(0..36, 0..1);
     }
 
     self.queue.submit(Some(encoder.finish()));
