@@ -4,7 +4,56 @@
  * Author: James Madden
  */
 use winit::window::Window;
-use std::borrow::Cow;
+use std::{borrow::Cow, f32::consts::PI};
+use crate::matrix::{Mat4, Vec4};
+
+// the cube to draw :)
+const CUBE_VERTICES: [f32; 144] = [
+
+  // position
+  1., -1., 1., 1.,
+  -1., -1., 1., 1.,
+  -1., -1., -1., 1.,
+  1., -1., -1., 1.,
+  1., -1., 1., 1.,
+  -1., -1., -1., 1.,
+
+  1., 1., 1., 1.,
+  1., -1., 1., 1.,
+  1., -1., -1., 1.,
+  1., 1., -1., 1.,
+  1., 1., 1., 1.,
+  1., -1., -1., 1.,
+
+  -1., 1., 1., 1.,
+  1., 1., 1., 1.,
+  1., 1., -1., 1.,
+  -1., 1., -1., 1.,
+  -1., 1., 1., 1.,
+  1., 1., -1., 1.,
+
+  -1., -1., 1., 1.,
+  -1., 1., 1., 1.,
+  -1., 1., -1., 1.,
+  -1., -1., -1., 1.,
+  -1., -1., 1., 1.,
+  -1., 1., -1., 1.,
+
+  1., 1., 1., 1.,
+  -1., 1., 1., 1.,
+  -1., -1., 1., 1.,
+  -1., -1., 1., 1.,
+  1., -1., 1., 1.,
+  1., 1., 1., 1.,
+
+  1., -1., -1., 1.,
+  -1., -1., -1., 1.,
+  -1., 1., -1., 1.,
+  1., 1., -1., 1.,
+  1., -1., -1., 1.,
+  -1., 1., -1., 1.
+
+];
 
 pub struct Draw {
   surface: wgpu::Surface,
@@ -44,6 +93,13 @@ impl Draw {
       label: None,
       source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("shaders/shader.wgsl")))
     });
+
+    // the perspective matrix
+    let perspective = Mat4::projection(1., -1., -1., 1., 1., -1.);
+    // transformation to rotate the cube and scale it down
+    let model = Mat4::transformation(0., 0., 0., PI / 4., PI / 4., 0., 0.5, 0.5, 0.5);
+
+    // create a vertex buffer and uniform buffer for the perspective and model
   
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
       label: None,
