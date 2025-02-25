@@ -4,6 +4,11 @@ struct Uniforms {
 };
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
 
+struct InstanceIn {
+    @location(5) position: vec3<i32>,
+    @location(6) block_type: u32
+}
+
 struct VertexIn {
     @location(0) position: vec3<f32>,
     @location(1) tex_coords: vec2<f32>
@@ -15,10 +20,15 @@ struct VertexOut {
 }
 
 @vertex
-fn vs_main(in: VertexIn) -> VertexOut {
+fn vs_main(in: VertexIn, instance: InstanceIn) -> VertexOut {
 
     var out: VertexOut;
-    out.position = uniforms.view_proj * vec4<f32>(in.position, 1.0);
+
+    let x = in.position.x + f32(instance.position.x * 2);
+    let y = in.position.y + f32(instance.position.y * 2);
+    let z = in.position.z + f32(instance.position.z * 2);
+
+    out.position = uniforms.view_proj * vec4<f32>(x, y, z, 1.0);
     out.tex_coords = in.tex_coords;
 
     return out;

@@ -93,6 +93,13 @@ impl Uniforms {
   }
 }
 
+#[repr(C)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct Instance {
+  pub pos: [i32; 3],
+  pub block: u32
+}
+
 pub struct Render<'a> {
   
   surface: wgpu::Surface<'a>,
@@ -103,6 +110,8 @@ pub struct Render<'a> {
   vbuf: wgpu::Buffer,
   ibuf: wgpu::Buffer,
   isize: u32,
+  instbuf: wgpu::Buffer,
+  instsize: u32,
   ubuf: wgpu::Buffer,
   ubg: wgpu::BindGroup,
   tbg: wgpu::BindGroup,
@@ -118,7 +127,7 @@ impl<'a> Render<'a> {
   /**
   * create a new instance of render
   */
-  pub async fn new (window: &'a winit::window::Window, camera: &mut Camera) -> Render<'a> {
+  pub async fn new (window: &'a winit::window::Window, camera: &mut Camera, instances: Vec<Instance>) -> Render<'a> {
     
     // create the renderer
     let mut size = window.inner_size();
@@ -265,6 +274,7 @@ impl<'a> Render<'a> {
         module: &shader,
         entry_point: Some("vs_main"),
         buffers: &[
+          // vertex buffer layout
           wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<[f32; 5]>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
@@ -278,6 +288,23 @@ impl<'a> Render<'a> {
                 offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
                 shader_location: 1,
                 format: wgpu::VertexFormat::Float32x2,
+              },
+            ],
+          },
+          // instance buffer layout
+          wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<Instance>() as wgpu::BufferAddress,
+            step_mode: wgpu::VertexStepMode::Instance,
+            attributes: &[
+              wgpu::VertexAttribute {
+                offset: 0,
+                shader_location: 5,
+                format: wgpu::VertexFormat::Sint32x3,
+              },
+              wgpu::VertexAttribute {
+                offset: std::mem::size_of::<[i32; 3]>() as wgpu::BufferAddress,
+                shader_location: 6,
+                format: wgpu::VertexFormat::Uint32,
               },
             ],
           }
@@ -313,8 +340,14 @@ impl<'a> Render<'a> {
       contents: bytemuck::cast_slice(&INDEX),
       usage: wgpu::BufferUsages::INDEX,
     });
+    let instbuf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+      label: Some("Instance Buffer"),
+      contents: bytemuck::cast_slice(&instances),
+      usage: wgpu::BufferUsages::VERTEX,
+    });
 
     let isize = INDEX.len() as u32;
+    let instsize = instances.len() as u32;
     
     let config = surface
     .get_default_config(&adapter, size.width, size.height)
@@ -324,7 +357,7 @@ impl<'a> Render<'a> {
     // create depth texture
     let depth_texture = Texture::create_depth_texture(&device, &config, "depth_texture");
     
-    Render { surface, device, queue, pipeline: render_pipeline, config, vbuf, ibuf, isize, ubuf, ubg, tbg, uniforms, texture, depth_texture, window }
+    Render { surface, device, queue, pipeline: render_pipeline, config, vbuf, ibuf, isize, instbuf, instsize, ubuf, ubg, tbg, uniforms, texture, depth_texture, window }
     
   }
   
@@ -346,9 +379,13 @@ impl<'a> Render<'a> {
   /**
    * update the uniforms with the new data
    */
-  pub fn update (&mut self, camera: &Camera) {
+  pub fn update_camera (&mut self, camera: &Camera) {
     self.uniforms.update_view_proj(camera);
     self.queue.write_buffer(&self.ubuf, 0, bytemuck::cast_slice(&[self.uniforms]));
+  }
+
+  pub fn update_instances (&mut self, instances: Vec<Instance>) {
+
   }
   
   /**
@@ -391,8 +428,9 @@ impl<'a> Render<'a> {
       rpass.set_bind_group(0, &self.ubg, &[]);
       rpass.set_bind_group(1, &self.tbg, &[]);
       rpass.set_vertex_buffer(0, self.vbuf.slice(..));
+      rpass.set_vertex_buffer(1, self.instbuf.slice(..));
       rpass.set_index_buffer(self.ibuf.slice(..), wgpu::IndexFormat::Uint16);
-      rpass.draw_indexed(0..self.isize, 0, 0..1);
+      rpass.draw_indexed(0..self.isize, 0, 0..self.instsize);
     }
     
     self.queue.submit(Some(encoder.finish()));
