@@ -1,6 +1,7 @@
 mod render;
 mod camera;
 mod texture;
+mod world;
 use winit::{
   event::{Event, WindowEvent},
   event_loop::EventLoop,
@@ -8,9 +9,14 @@ use winit::{
 };
 
 async fn run(event_loop: EventLoop<()>, window: Window) {
+
+  // create the world
+  let mut world = world::World::test();
+  // generate the instances
+  let instances = world.gen_instances();
   
   let mut camera = camera::Camera::new();
-  let mut render = render::Render::new(&window, &mut camera).await;
+  let mut render = render::Render::new(&window, &mut camera, instances).await;
 
   event_loop.run(move |event, target| {
     // Have the closure take ownership of the resources.
@@ -28,7 +34,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
         }
         WindowEvent::RedrawRequested => {
           camera.update();
-          render.update(&camera);
+          render.update_camera(&camera);
           render.render();
           render.window.request_redraw();
         }
