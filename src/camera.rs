@@ -34,7 +34,7 @@ impl Camera {
       // +z is out of the screen
       eye: (0.0, 1.0, 2.0).into(),
       // have it look at the origin
-      target: (0.0, 0.0, 0.0).into(),
+      target: (16.0, -128.0, 16.0).into(),
       // which way is "up"
       up: cgmath::Vector3::unit_y(),
       aspect: 400.0 / 300.0,
@@ -57,17 +57,15 @@ impl Camera {
    * make the camera spin around the origin
    */
   pub fn update(&mut self) {
-    let radius = 4.0;
+    let radius = 32.0;
     let time = std::time::SystemTime::now()
       .duration_since(self.create_time)
       .unwrap()
-      .as_millis() as f32 / 10.0;
+      .as_millis() as f32 / 50.0;
     let x = (time * PI / 180.0).sin() * radius;
     let z = (time * PI / 180.0).cos() * radius;
 
-    let y = (time / 180.0).sin() * radius;
-
-    self.eye = cgmath::Point3::new(x, y, z);
+    self.eye = cgmath::Point3::new(x + 16.0, -120.0, z + 16.0);
   }
 
   /**
