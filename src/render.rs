@@ -10,38 +10,38 @@ use crate::camera::Camera;
 use crate::texture::Texture;
 
 // vertices for a cube
-const VERT: [f32; 120] = [
-  // pos              tx location
+const VERT: [f32; 192] = [
+  // pos              tx coords  normal
   // front
-  -1.0, -1.0,  1.0,   1.0, 1.0, // bottom left
-   1.0, -1.0,  1.0,   0.0, 1.0, // bottom right
-   1.0,  1.0,  1.0,   0.0, 0.0, // top right
-  -1.0,  1.0,  1.0,   1.0, 0.0, // top left
+  -1.0, -1.0,  1.0,   1.0, 1.0,   0.0,  0.0, -1.0, // bottom left
+   1.0, -1.0,  1.0,   0.0, 1.0,   0.0,  0.0, -1.0, // bottom right
+   1.0,  1.0,  1.0,   0.0, 0.0,   0.0,  0.0, -1.0, // top right
+  -1.0,  1.0,  1.0,   1.0, 0.0,   0.0,  0.0, -1.0, // top left
   // back
-  -1.0, -1.0, -1.0,   1.0, 1.0, // bottom left
-   1.0, -1.0, -1.0,   0.0, 1.0, // bottom right
-   1.0,  1.0, -1.0,   0.0, 0.0, // top right
-  -1.0,  1.0, -1.0,   1.0, 0.0, // top left
+  -1.0, -1.0, -1.0,   1.0, 1.0,   0.0,  0.0,  1.0, // bottom left
+   1.0, -1.0, -1.0,   0.0, 1.0,   0.0,  0.0,  1.0, // bottom right
+   1.0,  1.0, -1.0,   0.0, 0.0,   0.0,  0.0,  1.0, // top right
+  -1.0,  1.0, -1.0,   1.0, 0.0,   0.0,  0.0,  1.0, // top left
   // bottom
-  -1.0, -1.0, -1.0,   1.0, 0.0, // back left
-  -1.0, -1.0,  1.0,   0.0, 0.0, // front left
-   1.0, -1.0,  1.0,   0.0, 1.0, // front right
-   1.0, -1.0, -1.0,   1.0, 1.0, // back right
+  -1.0, -1.0, -1.0,   1.0, 0.0,   0.0, -1.0,  0.0, // back left
+  -1.0, -1.0,  1.0,   0.0, 0.0,   0.0, -1.0,  0.0, // front left
+   1.0, -1.0,  1.0,   0.0, 1.0,   0.0, -1.0,  0.0, // front right
+   1.0, -1.0, -1.0,   1.0, 1.0,   0.0, -1.0,  0.0, // back right
    // left
-  -1.0, -1.0, -1.0,   0.0, 1.0, // bottom back
-  -1.0,  1.0, -1.0,   0.0, 0.0, // top back
-  -1.0, -1.0,  1.0,   1.0, 1.0, // bottom front
-  -1.0,  1.0,  1.0,   1.0, 0.0, // top front
+  -1.0, -1.0, -1.0,   0.0, 1.0,  -1.0,  0.0,  0.0, // bottom back
+  -1.0,  1.0, -1.0,   0.0, 0.0,  -1.0,  0.0,  0.0, // top back
+  -1.0, -1.0,  1.0,   1.0, 1.0,  -1.0,  0.0,  0.0, // bottom front
+  -1.0,  1.0,  1.0,   1.0, 0.0,  -1.0,  0.0,  0.0, // top front
   // right
-   1.0,  1.0, -1.0,   1.0, 0.0, // top back
-   1.0, -1.0, -1.0,   1.0, 1.0, // bottom back
-   1.0,  1.0,  1.0,   0.0, 0.0, // top front
-   1.0, -1.0,  1.0,   0.0, 1.0, // bottom front
+   1.0,  1.0, -1.0,   1.0, 0.0,   1.0,  0.0,  0.0, // top back
+   1.0, -1.0, -1.0,   1.0, 1.0,   1.0,  0.0,  0.0, // bottom back
+   1.0,  1.0,  1.0,   0.0, 0.0,   1.0,  0.0,  0.0, // top front
+   1.0, -1.0,  1.0,   0.0, 1.0,   1.0,  0.0,  0.0, // bottom front
   // top
-   1.0,  1.0,  1.0,   1.0, 1.0, // front right
-  -1.0,  1.0,  1.0,   0.0, 1.0, // front left
-   1.0,  1.0, -1.0,   1.0, 0.0, // back right
-  -1.0,  1.0, -1.0,   0.0, 0.0, // back left
+   1.0,  1.0,  1.0,   1.0, 1.0,   0.0,  1.0,  0.0, // front right
+  -1.0,  1.0,  1.0,   0.0, 1.0,   0.0,  1.0,  0.0, // front left
+   1.0,  1.0, -1.0,   1.0, 0.0,   0.0,  1.0,  0.0, // back right
+  -1.0,  1.0, -1.0,   0.0, 0.0,   0.0,  1.0,  0.0, // back left
 
 
 ];
@@ -276,7 +276,7 @@ impl<'a> Render<'a> {
         buffers: &[
           // vertex buffer layout
           wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<[f32; 5]>() as wgpu::BufferAddress,
+            array_stride: std::mem::size_of::<[f32; 8]>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &[
               wgpu::VertexAttribute {
@@ -288,6 +288,11 @@ impl<'a> Render<'a> {
                 offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
                 shader_location: 1,
                 format: wgpu::VertexFormat::Float32x2,
+              },
+              wgpu::VertexAttribute {
+                offset: std::mem::size_of::<[f32; 5]>() as wgpu::BufferAddress,
+                shader_location: 2,
+                format: wgpu::VertexFormat::Float32x3,
               },
             ],
           },

@@ -11,12 +11,14 @@ struct InstanceIn {
 
 struct VertexIn {
     @location(0) position: vec3<f32>,
-    @location(1) tex_coords: vec2<f32>
+    @location(1) tex_coords: vec2<f32>,
+    @location(2) normal: vec3<f32>
 }
 
 struct VertexOut {
     @builtin(position) position: vec4<f32>,
-    @location(0) tex_coords: vec2<f32>
+    @location(0) tex_coords: vec2<f32>,
+    @location(1) normal: vec3<f32>
 }
 
 @vertex
@@ -30,6 +32,7 @@ fn vs_main(in: VertexIn, instance: InstanceIn) -> VertexOut {
 
     out.position = uniforms.view_proj * vec4<f32>(x, y, z, 1.0);
     out.tex_coords = in.tex_coords;
+    out.normal = in.normal;
 
     return out;
 }
@@ -41,5 +44,14 @@ var s_diffuse: sampler;
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
-    return textureSample(t_diffuse, s_diffuse, in.tex_coords);
+
+    var shading = 1.0;
+
+    if (in.normal.x != 0.0) {
+        shading = 0.75;
+    } else if (in.normal.z != 0.0) {
+        shading = 0.5;
+    }
+
+    return shading * textureSample(t_diffuse, s_diffuse, in.tex_coords);
 }
