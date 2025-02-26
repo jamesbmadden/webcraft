@@ -7,11 +7,15 @@ use winit::{
   event_loop::EventLoop,
   window::Window,
 };
+use std::fs::File;
 
 async fn run(event_loop: EventLoop<()>, window: Window) {
 
   // create the world
-  let mut world = world::World::test();
+  let mut file = File::open("src/chunk_tests/superflat.mca").unwrap();
+  let world = world::World::parse_world(&mut file);
+
+  // let world = world::World::test();
   // generate the instances
   let instances = world.gen_instances();
   
